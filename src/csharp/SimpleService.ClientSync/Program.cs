@@ -11,9 +11,9 @@ namespace SimpleService.ClientSync
         static void Main(string[] args) {
             Consumer consumer;
             try {
-                consumer = new Consumer("localhost", 3333);
+                consumer = new Consumer(args[0], int.Parse(args[1]));
             } catch(Exception) {
-                Console.WriteLine("failed to connect to localhost:3333");
+                Console.WriteLine("failed to connect to " + args[0] + ":" + args[1]);
             }
 
             while (true)
