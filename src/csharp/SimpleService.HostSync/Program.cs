@@ -13,9 +13,8 @@ namespace SimpleService.HostSync
 
             });
 
-            while(true) {
-                Console.ReadKey();
-            }
+            while(true)
+                host.Poll();
         }
     }
 }

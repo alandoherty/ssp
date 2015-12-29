@@ -19,6 +19,15 @@ namespace SimpleService.Protocol
 
         #region Properties
         /// <summary>
+        /// Gets if this connection is currently connected.
+        /// </summary>
+        public bool Connected {
+            get {
+                return peer.Connected;
+            }
+        }
+
+        /// <summary>
         /// Gets the underlying peer.
         /// </summary>
         public Peer Peer {
@@ -33,24 +42,6 @@ namespace SimpleService.Protocol
         public bool Available {
             get {
                 return packetsIn.Count > 0;
-            }
-        }
-
-        /// <summary>
-        /// Gets if the client is connected.
-        /// </summary>
-        public bool Connected {
-            get {
-                return peer.Connected;
-            }
-        }
-
-        /// <summary>
-        /// Gets the underlying client thread.
-        /// </summary>
-        public Thread Thread {
-            get {
-                return thread;
             }
         }
         #endregion

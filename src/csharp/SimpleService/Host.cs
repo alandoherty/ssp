@@ -2,6 +2,7 @@
 using SimpleService.Protocol;
 using System;
 using System.Net;
+using System.Text;
 
 namespace SimpleService
 {
@@ -30,6 +31,29 @@ namespace SimpleService
         /// <param name="handler">The handler.</param>
         public void Add(string name, Visibility visibility, ServiceMessageHandler handler) {
 
+        }
+
+        /// <summary>
+        /// Polls the host for processing.
+        /// </summary>
+        public void Poll() {
+            foreach(Connection conn in server.Connections) {
+                while (conn.Available) {
+                    // read packet
+                    Packet p = conn.Read();
+
+                    // handle
+                    if (p.Type == Packet.Opcode.Message || p.Type == Packet.Opcode.Request) {
+                        // get json
+                        string json = Encoding.UTF8.GetString(p.Data);
+
+                        Utilities.DebugLog("received message " + p.Service + ": " + json);
+                    } else {
+                        conn.Disconnect("Invalid packet");
+                        return;
+                    }
+                }
+            }
         }
         #endregion
 
