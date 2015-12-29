@@ -14,6 +14,17 @@ namespace SimpleService
         private Client client;
         #endregion
 
+        #region Properties
+        /// <summary>
+        /// Gets if this consumer is currently connected to a host.
+        /// </summary>
+        public bool Connected {
+            get {
+                return client.Connected;
+            }
+        }
+        #endregion
+
         #region Methods
         /// <summary>
         /// Connects to the specified host and port.
@@ -53,31 +64,88 @@ namespace SimpleService
         /// </summary>
         /// <param name="service">The service.</param>
         /// <param name="obj">The object.</param>
+        public void Message(string service, object obj) {
+            Message(service, obj, "");
+        }
+
+        /// <summary>
+        /// Sends a request to the host.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
         public void Message(string service, JObject obj) {
             Message(service, obj, "");
         }
 
         /// <summary>
-        /// Sends a request to the host with authentication.
+        /// Sends a request to the host.
         /// </summary>
         /// <param name="service">The service.</param>
-        /// <param name="obj">The JSON.</param>
-        /// <param name="token">The token.</param>
-        public void Message(string service, JObject obj, string token) {
+        /// <param name="json">The JSON string..</param>
+        public void Message(string service, string json) {
+            Message(service, json, "");
+        }
+        
+        /// <summary>
+        /// Sends a message to the host, authenticating with the provided token.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="json">The JSON string.</param>
+        /// <param name="token">The authentication token.</param>
+        public void Message(string service, string json, string token) {
             // check parameters
             if (token.Length > Packet.TOKEN_SIZE)
                 throw new InvalidOperationException("The token cannot be longer than 32 characters");
-            else if(token.Length > Packet.SERVICE_SIZE)
+            else if (token.Length > Packet.SERVICE_SIZE)
                 throw new InvalidOperationException("The token cannot be longer than 32 characters");
-
-            // get json
-            string json = obj.ToString(Formatting.None);
 
             // serialize
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 
             // write packet
             client.Write(Packet.Create(client.Peer, Packet.Opcode.Message, service, token, jsonBytes));
+        }
+
+        /// <summary>
+        /// Sends a message to the host, serializing the object to JSON and authenticating 
+        /// with the provided token.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
+        /// <param name="token">The authentication token.</param>
+        public void Message(string service, object obj, string token) {
+            Message(service, JsonConvert.SerializeObject(obj, Formatting.None), token);
+        }
+
+        /// <summary>
+        /// Sends a message to the host, authenticating with the provided token.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
+        /// <param name="token">The token.</param>
+        public void Message(string service, JObject obj, string token) {
+            Message(service, obj.ToString(Formatting.None), token);
+        }
+
+        /// <summary>
+        /// Polls and processing messages.
+        /// </summary>
+        public void Poll() {
+            while(client.Available) {
+                // read packet
+                Packet p = client.Read();
+
+                // handle
+                if (p.Type == Packet.Opcode.Message || p.Type == Packet.Opcode.Request) {
+                    // get json
+                    string json = Encoding.UTF8.GetString(p.Data);
+
+                    Utilities.DebugLog("received message " + p.Service + ": " + json);
+                }  else {
+                    client.Disconnect("Invalid packet");
+                    return;
+                }
+            }
         }
         #endregion
 

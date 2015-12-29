@@ -19,11 +19,29 @@ namespace SimpleService.Protocol
 
         #region Properties
         /// <summary>
+        /// Gets if this connection is currently connected.
+        /// </summary>
+        public bool Connected {
+            get {
+                return peer.Connected;
+            }
+        }
+
+        /// <summary>
         /// Gets the underlying peer.
         /// </summary>
         public Peer Peer {
             get {
                 return peer;
+            }
+        }
+
+        /// <summary>
+        /// Gets if packets are available to read.
+        /// </summary>
+        public bool Available {
+            get {
+                return packetsIn.Count > 0;
             }
         }
         #endregion

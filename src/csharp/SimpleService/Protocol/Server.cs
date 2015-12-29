@@ -22,6 +22,15 @@ namespace SimpleService.Protocol
                 return port;
             }
         }
+
+        /// <summary>
+        /// Gets the connection.
+        /// </summary>
+        public List<Connection> Connections {
+            get {
+                return connections;
+            }
+        }
         #endregion
 
         #region Methods

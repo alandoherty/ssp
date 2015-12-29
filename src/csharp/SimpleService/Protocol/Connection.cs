@@ -34,6 +34,15 @@ namespace SimpleService.Protocol
         }
 
         /// <summary>
+        /// Gets if this connection is currently connected.
+        /// </summary>
+        public bool Connected {
+            get {
+                return peer.Connected;
+            }
+        }
+
+        /// <summary>
         /// Gets if packets are available to read.
         /// </summary>
         public bool Available {
@@ -44,6 +53,21 @@ namespace SimpleService.Protocol
         #endregion
 
         #region Methods
+        /// <summary>
+        /// Closes the connection.
+        /// </summary>
+        public void Close() {
+            peer.Close();
+        }
+
+        /// <summary>
+        /// Disconnects the connection.
+        /// </summary>
+        /// <param name="reason">The reason.</param>
+        public void Disconnect(string reason) {
+            peer.Disconnect(reason, true);
+        }
+
         /// <summary>
         /// The loop to read/write packets.
         /// </summary>
