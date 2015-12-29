@@ -19,9 +19,12 @@ namespace SimpleService.ClientSync
             }
 
             // send test message
-            consumer.Message("TestCommand001", new {
-                potato = 5
-            });
+            for (int i = 0; i < 10; i++) {
+                consumer.Message("TestCommand001", new {
+                    potato = i + 1
+                });
+                System.Threading.Thread.Sleep(1000);
+            }
 
             while (true)
                 consumer.Poll();
