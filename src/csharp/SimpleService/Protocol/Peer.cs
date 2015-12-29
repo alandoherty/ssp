@@ -102,10 +102,12 @@ namespace SimpleService.Protocol
         public Packet Read() {
             try {
                 return Packet.Deserialize(stream);
-            } catch(Exception) {
-                if (state == State.Connected)
-                    Disconnect("Socket read error", false);
-
+            } catch (ProtocolException ex) {
+                Disconnect(ex.Message, false);
+            
+                return null;
+            } catch (Exception ex) {
+                Disconnect("Socket read error", false);
                 return null;
             }
         }
@@ -117,9 +119,9 @@ namespace SimpleService.Protocol
         public void Write(Packet packet) {
             try {
                 packet.Serialize(stream);
-            } catch(Exception) {
-                if (state == State.Connected)
-                    Disconnect("Socket write error", false);
+            } catch (Exception ex) {
+                Disconnect("Socket write error", false);
+                return;
             }
 
             // increment sequence value
@@ -148,6 +150,10 @@ namespace SimpleService.Protocol
                     Write(Packet.Create(this, Packet.Opcode.Internal, "__Disconnect", "", ms.ToArray(), sequence));
                 }
             }
+
+            // reason
+            if (disconnectReason == null)
+                disconnectReason = reason;
 
             // close
             Close();
@@ -196,6 +202,7 @@ namespace SimpleService.Protocol
             this.stream = client.GetStream();
             this.state = State.Connected;
             this.localAddress = ((IPEndPoint)client.Client.LocalEndPoint).Address.ToString();
+            this.disconnectReason = null;
             this.remoteAddress = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
         }
         #endregion

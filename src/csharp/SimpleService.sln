@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{53
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleService.HostSync", "SimpleService.HostSync\SimpleService.HostSync.csproj", "{FC4D0A8B-A781-4169-894D-464D501FC7F2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleService.ClientSync", "SimpleService.ClientSync\SimpleService.ClientSync.csproj", "{7BADE9B3-B6C8-49F8-AF14-F8E1E4395B26}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,11 +25,16 @@ Global
 		{FC4D0A8B-A781-4169-894D-464D501FC7F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC4D0A8B-A781-4169-894D-464D501FC7F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC4D0A8B-A781-4169-894D-464D501FC7F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BADE9B3-B6C8-49F8-AF14-F8E1E4395B26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BADE9B3-B6C8-49F8-AF14-F8E1E4395B26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BADE9B3-B6C8-49F8-AF14-F8E1E4395B26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BADE9B3-B6C8-49F8-AF14-F8E1E4395B26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FC4D0A8B-A781-4169-894D-464D501FC7F2} = {5361F8EB-2EEF-4A91-AAB2-F8B8B93B3AFD}
+		{7BADE9B3-B6C8-49F8-AF14-F8E1E4395B26} = {5361F8EB-2EEF-4A91-AAB2-F8B8B93B3AFD}
 	EndGlobalSection
 EndGlobal

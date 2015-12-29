@@ -36,6 +36,53 @@ namespace SimpleService.Protocol
         private byte[] data;
         #endregion
 
+        #region Properties
+        /// <summary>
+        /// Gets the packet opcode.
+        /// </summary>
+        public Opcode Type {
+            get {
+                return opcode;
+            }
+        }
+
+        /// <summary>
+        /// Gets the sequence.
+        /// </summary>
+        public ushort Sequence {
+            get {
+                return sequence;
+            }
+        }
+
+        /// <summary>
+        /// Gets the authentication token.
+        /// </summary>
+        public string Token {
+            get {
+                return token;
+            }
+        }
+
+        /// <summary>
+        /// Gets the service.
+        /// </summary>
+        public string Service {
+            get {
+                return service;
+            }
+        }
+
+        /// <summary>
+        /// Gets the packet payload.
+        /// </summary>
+        public byte[] Data {
+            get {
+                return data;
+            }
+        }
+        #endregion
+
         #region Methods
         /// <summary>
         /// Serializes the packet to the stream.
@@ -81,7 +128,7 @@ namespace SimpleService.Protocol
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(MAGIC.Length));
 
             if (magic != MAGIC)
-                throw new InvalidDataException("The incoming packet buffer contains an invalid magic");
+                throw new ProtocolException("Incoming packet has invalid magic", ProtocolError.InvalidMagic);
 
             // opcode, length & sequence
             p.opcode = (Opcode)reader.ReadByte();
@@ -133,7 +180,7 @@ namespace SimpleService.Protocol
             byte[] strBytes = new byte[fixedSize];
 
             // copy
-            Array.Copy(Encoding.ASCII.GetBytes(str), strBytes, fixedSize);
+            Array.Copy(Encoding.ASCII.GetBytes(str), strBytes, str.Length);
 
             return strBytes;
         }
@@ -147,7 +194,7 @@ namespace SimpleService.Protocol
         /// <param name="token">The authentication token.</param>
         /// <param name="data">The data.</param>
         /// <returns></returns>
-        public Packet Create(Peer peer, Opcode opcode, string service, string token, byte[] data) {
+        public static Packet Create(Peer peer, Opcode opcode, string service, string token, byte[] data) {
             Packet p = new Packet();
             p.opcode = opcode;
             p.token = token;

@@ -9,10 +9,17 @@ namespace SimpleService.Protocol
 {
     internal class Connection
     {
+        #region Constants
+        public const int KEEP_ALIVE_DELAY = 3;
+        public const int KEEP_ALIVE_WAIT = KEEP_ALIVE_DELAY * 2;
+        #endregion
+
         #region Fields
         private Peer peer;
         private ConcurrentQueue<Packet> packetsIn;
         private ConcurrentQueue<Packet> packetsOut;
+        private long lastSendAlive = Utilities.Timestamp() - KEEP_ALIVE_WAIT;
+        private long lastRecvAlive = Utilities.Timestamp() - KEEP_ALIVE_WAIT;
         private Thread thread;
         #endregion
 
@@ -63,16 +70,51 @@ namespace SimpleService.Protocol
                         // read packet
                         Packet p = peer.Read();
 
-                        // queue
-                        packetsIn.Enqueue(p);
+                        if (p.Type == Packet.Opcode.Internal)
+                            ProcessInternal(p);
+                        else
+                            packetsIn.Enqueue(p);
                     } catch (Exception ex) {
-                        Utilities.DebugLog("bad packet received: " + ex.Message);
+                        Utilities.DebugLog("failed to decode packet: " + ex.Message);
                     }
+                }
+
+                // check if keep alive required
+                if (lastSendAlive + KEEP_ALIVE_DELAY < Utilities.Timestamp()) {
+                    Write(Packet.Create(peer, Packet.Opcode.Internal, "__KeepAlive", "", new byte[] { }));
+                    lastSendAlive = Utilities.Timestamp();
+                }
+
+                // check for timeout
+                if (lastRecvAlive + KEEP_ALIVE_WAIT < Utilities.Timestamp()) {
+                    peer.Disconnect("Timeout", true);
                 }
             }
 
             // log
-            Utilities.DebugLog("disconnection from " + peer.RemoteAddress);
+            Utilities.DebugLog("disconnection from " + peer.RemoteAddress + " for " + peer.DisconnectReason);
+        }
+
+        /// <summary>
+        /// Processes an internal packet.
+        /// </summary>
+        /// <param name="p">The packet.</param>
+        private void ProcessInternal(Packet p) {
+            if (p.Service == "__KeepAlive") {
+                lastRecvAlive = Utilities.Timestamp();
+            } else if (p.Service == "__Disconnect") {
+                if (p.Data.Length != 255) {
+                    peer.Disconnect("Disconnected by server");
+                } else {
+                    // decode reason
+                    string str = Packet.DecodeFixedBytes(p.Data, 32, 255);
+
+                    // do disconnect
+                    peer.Disconnect(str);
+                }
+            } else {
+                peer.Disconnect("Invalid internal service", true);
+            }
         }
 
         /// <summary>
@@ -102,6 +144,7 @@ namespace SimpleService.Protocol
             this.peer = new Peer(client);
             this.packetsIn = new ConcurrentQueue<Packet>();
             this.packetsOut = new ConcurrentQueue<Packet>();
+            this.lastRecvAlive = Utilities.Timestamp();
 
             // thread
             this.thread = new Thread(Loop);

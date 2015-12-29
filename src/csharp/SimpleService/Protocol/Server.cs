@@ -56,6 +56,9 @@ namespace SimpleService.Protocol
 
             // push to connections
             connections.Add(conn);
+
+            // reinstate handlers
+            listener.BeginAcceptTcpClient(Accept, null);
         }
 
         /// <summary>

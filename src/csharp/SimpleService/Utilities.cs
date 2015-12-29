@@ -14,6 +14,15 @@ namespace SimpleService
             Console.WriteLine("[ssp:log] " + msg);
 #endif
         }
+
+        /// <summary>
+        /// Gets the current unix timestamp.
+        /// </summary>
+        /// <returns>The current unix timestamp.</returns>
+        public static long Timestamp() {
+            var timeSpan = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0));
+            return (long)timeSpan.TotalSeconds;
+        }
         #endregion
     }
 }
