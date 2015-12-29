@@ -16,8 +16,11 @@ namespace SimpleService.ClientSync
                 Console.WriteLine("failed to connect to localhost:3333");
             }
 
-            while (true)
-                Console.ReadKey();
+            // test message
+            consumer.Message()
+            while (true) {
+                consumer.Poll();
+            }
         }
     }
 }

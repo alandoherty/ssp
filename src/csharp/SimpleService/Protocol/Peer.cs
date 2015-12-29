@@ -101,12 +101,12 @@ namespace SimpleService.Protocol
         /// <returns>The packet.</returns>
         public Packet Read() {
             try {
-                return Packet.Deserialize(stream);
+                return Packet.Deserialize(this, stream);
             } catch (ProtocolException ex) {
                 Disconnect(ex.Message, false);
             
                 return null;
-            } catch (Exception ex) {
+            } catch (Exception) {
                 Disconnect("Socket read error", false);
                 return null;
             }
@@ -119,7 +119,7 @@ namespace SimpleService.Protocol
         public void Write(Packet packet) {
             try {
                 packet.Serialize(stream);
-            } catch (Exception ex) {
+            } catch (Exception) {
                 Disconnect("Socket write error", false);
                 return;
             }

@@ -14,6 +14,17 @@ namespace SimpleService
         private Client client;
         #endregion
 
+        #region Properties
+        /// <summary>
+        /// Gets if the consumer is connected to a host.
+        /// </summary>
+        public bool Connected {
+            get {
+                return client != null && client.Connected;
+            }
+        }
+        #endregion
+
         #region Methods
         /// <summary>
         /// Connects to the specified host and port.
@@ -78,6 +89,13 @@ namespace SimpleService
 
             // write packet
             client.Write(Packet.Create(client.Peer, Packet.Opcode.Message, service, token, jsonBytes));
+        }
+
+        /// <summary>
+        /// Polls the consumer for messages and requests.
+        /// </summary>
+        public void Poll() {
+
         }
         #endregion
 

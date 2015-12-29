@@ -34,6 +34,7 @@ namespace SimpleService.Protocol
         private string token;
         private string service;
         private byte[] data;
+        private Peer source;
         #endregion
 
         #region Properties
@@ -43,6 +44,15 @@ namespace SimpleService.Protocol
         public Opcode Type {
             get {
                 return opcode;
+            }
+        }
+
+        /// <summary>
+        /// Gets the peer the packet came from.
+        /// </summary>
+        public Peer Source {
+            get {
+                return source;
             }
         }
 
@@ -115,11 +125,13 @@ namespace SimpleService.Protocol
         /// <summary>
         /// Creates a new packet from a buffer.
         /// </summary>
+        /// <param name="peer">The peer.</param>
         /// <param name="stream">The stream.</param>
         /// <returns></returns>
-        public static Packet Deserialize(Stream stream) {
+        public static Packet Deserialize(Peer peer, Stream stream) {
             // create packet
             Packet p = new Packet();
+            p.source = peer;
 
             // reader
             BinaryReader reader = new BinaryReader(stream);
@@ -201,6 +213,7 @@ namespace SimpleService.Protocol
             p.service = service;
             p.sequence = peer.Sequence;
             p.data = data;
+            p.source = peer;
             return p;
         }
 
@@ -220,6 +233,7 @@ namespace SimpleService.Protocol
             p.service = service;
             p.sequence = sequence;
             p.data = data;
+            p.source = peer;
             return p;
         }
         #endregion

@@ -41,6 +41,24 @@ namespace SimpleService.Protocol
                 return packetsIn.Count > 0;
             }
         }
+
+        /// <summary>
+        /// Gets if the client is connected.
+        /// </summary>
+        public bool Connected {
+            get {
+                return peer.Connected;
+            }
+        }
+
+        /// <summary>
+        /// Gets the underlying client thread.
+        /// </summary>
+        public Thread Thread {
+            get {
+                return thread;
+            }
+        }
         #endregion
 
         #region Methods

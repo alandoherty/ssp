@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace SimpleService.Protocol
 {
@@ -11,6 +13,7 @@ namespace SimpleService.Protocol
         private int port;
         private TcpListener listener;
         private List<Connection> connections;
+        private bool running;
         #endregion
 
         #region Properties
@@ -20,6 +23,24 @@ namespace SimpleService.Protocol
         public int Port {
             get {
                 return port;
+            }
+        }
+
+        /// <summary>
+        /// Gets if the server is running.
+        /// </summary>
+        public bool Running {
+            get {
+                return running;
+            }
+        }
+
+        /// <summary>
+        /// Gets the connections.
+        /// </summary>
+        public List<Connection> Connections {
+            get {
+                return connections;
             }
         }
         #endregion
@@ -32,15 +53,10 @@ namespace SimpleService.Protocol
             // start the listener
             listener.Start();
 
+            running = true;
+
             // setup handlers
             listener.BeginAcceptTcpClient(Accept, null);
-        }
-
-        /// <summary>
-        /// Polls the server.
-        /// </summary>
-        public void Poll() {
-            
         }
 
         /// <summary>
@@ -67,6 +83,8 @@ namespace SimpleService.Protocol
         public void Stop() {
             // stops the listener
             listener.Stop();
+
+            running = false;
         }
         #endregion
 
