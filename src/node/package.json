@@ -1,0 +1,12 @@
+{
+  "name": "simpleservice",
+  "version": "1.0.0",
+  "description": "A simple protocol for cross-language JSON communication",
+  "main": "src/index.js",
+  "scripts": {
+    "test-host": "node ./test/host.js",
+	"test-client": "node ./test/client.js"
+  },
+  "author": "Alan Doherty <alan@karambyte.com>",
+  "license": "MIT"
+}
