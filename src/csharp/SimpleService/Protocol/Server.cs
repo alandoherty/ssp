@@ -68,10 +68,12 @@ namespace SimpleService.Protocol
             TcpClient client = listener.EndAcceptTcpClient(res);
 
             // create connection
-            Connection conn = new Connection(client);
+            Connection conn = new Connection(this, client);
 
             // push to connections
-            connections.Add(conn);
+            lock(connections) {
+                connections.Add(conn);
+            }
 
             // reinstate handlers
             listener.BeginAcceptTcpClient(Accept, null);

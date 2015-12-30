@@ -9,8 +9,8 @@ namespace SimpleService.HostSync
             Console.WriteLine("Starting service host on port 3333...");
             Host host = new Host(3333);
 
-            host.Add("TestCommand001", Visibility.Private, delegate (JObject obj) {
-
+            host.Bind("TestCommand001", Visibility.Private, delegate (JObject obj) {
+                Console.WriteLine(obj.ToString(Newtonsoft.Json.Formatting.Indented));
             });
 
             while(true)

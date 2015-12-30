@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace SimpleService.Protocol
 {
-    internal class Client
+    internal class Client : IClient
     {
         #region Fields
         private Peer peer;

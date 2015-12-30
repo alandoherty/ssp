@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace SimpleService.Protocol
 {
-    internal class Connection
+    internal class Connection : IClient
     {
         #region Constants
         public const int KEEP_ALIVE_DELAY = 3;
@@ -21,6 +21,7 @@ namespace SimpleService.Protocol
         private long lastSendAlive = Utilities.Timestamp() - KEEP_ALIVE_WAIT;
         private long lastRecvAlive = Utilities.Timestamp() - KEEP_ALIVE_WAIT;
         private Thread thread;
+        private Server server;
         #endregion
 
         #region Properties
@@ -48,6 +49,15 @@ namespace SimpleService.Protocol
         public bool Available {
             get {
                 return packetsIn.Count > 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets the parent server.
+        /// </summary>
+        public Server Server {
+            get {
+                return server;
             }
         }
         #endregion
@@ -163,8 +173,9 @@ namespace SimpleService.Protocol
         /// <summary>
         /// Creates a new connection from a socket.
         /// </summary>
+        /// <param name="server">The server.</param>
         /// <param name="client">The client.</param>
-        public Connection(TcpClient client) {
+        public Connection(Server server, TcpClient client) {
             this.peer = new Peer(client);
             this.packetsIn = new ConcurrentQueue<Packet>();
             this.packetsOut = new ConcurrentQueue<Packet>();

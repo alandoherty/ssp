@@ -99,11 +99,8 @@ namespace SimpleService
             else if (token.Length > Packet.SERVICE_SIZE)
                 throw new InvalidOperationException("The token cannot be longer than 32 characters");
 
-            // serialize
-            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-
             // write packet
-            client.Write(Packet.Create(client.Peer, Packet.Opcode.Message, service, token, jsonBytes));
+            client.Write(Transaction.CreateMessage(service, json, token, client.Peer));
         }
 
         /// Sends a message to the host, serializing the object to JSON and authenticating 
@@ -136,15 +133,71 @@ namespace SimpleService
 
                 // handle
                 if (p.Type == Packet.Opcode.Message || p.Type == Packet.Opcode.Request) {
-                    // get json
-                    string json = Encoding.UTF8.GetString(p.Data);
+                    // get transaction
+                    Transaction transaction = null;
 
-                    Utilities.DebugLog("received message " + p.Service + ": " + json);
+                    // try and parse json
+                    try {
+                        transaction = new Transaction(p);
+                    } catch (Exception) {
+                        client.Disconnect("Malformed or invalid JSON");
+
+                        continue;
+                    }
+
+                    // call handler
+                    if (transaction.IsMessage)
+                        HandleMessage(transaction);
+                    else if (transaction.IsRequest)
+                        HandleRequest(transaction);
                 }  else {
                     client.Disconnect("Invalid packet");
                     return;
                 }
             }
+        }
+
+        /// <summary>
+        /// Handles an incoming message.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        private void HandleMessage(Transaction transaction) {
+            /*
+            if (messageHandlers.ContainsKey(transaction.Service)) {
+                Handler handler = messageHandlers[transaction.Service];
+
+                // call
+                ((ServiceMessageHandler)handler.Action)(transaction.Data);
+            } else {
+                if (!kickNotFound)
+                    return;
+
+                // disconnect
+                conn.Disconnect("Service not found");
+            }*/
+        }
+
+        /// <summary>
+        /// Handles an incoming request.
+        /// </summary>
+        /// <param name="transaction">The transaction.</param>
+        private void HandleRequest(Transaction transaction) {
+            /*
+            if (requestHandlers.ContainsKey(transaction.Service)) {
+                Handler handler = requestHandlers[transaction.Service];
+
+                // call
+                JObject response = ((ServiceRequestHandler)handler.Action)(transaction.Data);
+
+                // reply
+                conn.Write(Transaction.CreateResponse(transaction, response.ToString(Formatting.None), conn.Peer));
+            } else {
+                if (!kickNotFound)
+                    return;
+
+                // disconnect
+                conn.Disconnect("Service not found");
+            }*/
         }
         #endregion
 
