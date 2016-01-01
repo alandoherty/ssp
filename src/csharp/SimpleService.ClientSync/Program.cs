@@ -12,6 +12,7 @@ namespace SimpleService.ClientSync
     {
         static void Main(string[] args) {
             Consumer consumer = null;
+
             try {
                 consumer = new Consumer(args[0], int.Parse(args[1]));
             } catch(Exception) {
@@ -23,6 +24,7 @@ namespace SimpleService.ClientSync
                 consumer.Message("TestCommand001", new {
                     potato = i + 1
                 });
+
                 System.Threading.Thread.Sleep(1000);
             }
 
