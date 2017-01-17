@@ -144,6 +144,10 @@ namespace SimpleService.Protocol
 
             // opcode, length & sequence
             p.opcode = (Opcode)reader.ReadByte();
+
+            if (p.opcode != Opcode.Internal && p.opcode != Opcode.Message && p.opcode != Opcode.Request)
+                throw new ProtocolException("Incoming packet has invalid opcode", ProtocolError.InvalidOpcode);
+
             p.data = new byte[reader.ReadInt32()];
             p.sequence = reader.ReadUInt16();
 
@@ -244,9 +248,25 @@ namespace SimpleService.Protocol
         /// </summary>
         public enum Opcode : byte
         {
+            /// <summary>
+            /// An internal message.
+            /// </summary>
             Internal = 0,
+
+            /// <summary>
+            /// A generic message.
+            /// </summary>
             Message = 1,
-            Request = 2
+
+            /// <summary>
+            /// A generic request.
+            /// </summary>
+            Request = 2,
+            
+            /// <summary>
+            /// An implementation opcode to process disconnects down the packet queue.
+            /// </summary>
+            Disconnect = 255
         }
         #endregion
 

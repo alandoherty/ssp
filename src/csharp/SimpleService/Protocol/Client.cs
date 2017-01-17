@@ -125,17 +125,26 @@ namespace SimpleService.Protocol
 
                 // process incoming
                 while (peer.Available) {
+#if !DEBUG
                     try {
-                        // read packet
-                        Packet p = peer.Read();
+#endif
+                    // read packet
+                    Packet p = peer.Read();
+
+                        if (p == null) {
+                            peer.Disconnect("Failed to read packet", false);
+                            break;
+                        }
 
                         if (p.Type == Packet.Opcode.Internal)
                             ProcessInternal(p);
                         else
                             packetsIn.Enqueue(p);
+#if !DEBUG
                     } catch (Exception ex) {
                         Utilities.DebugLog("bad packet received: " + ex.Message);
                     }
+#endif
                 }
 
                 // check if keep alive required
@@ -154,8 +163,8 @@ namespace SimpleService.Protocol
             // up elsewhere
             peer.Disconnect("Disconnected");
 
-            // log
-            Utilities.DebugLog("disconnected from " + peer.RemoteAddress + " for " + peer.DisconnectReason);
+            // write disconnect opcode
+            packetsIn.Enqueue(Packet.Create(peer, Packet.Opcode.Disconnect, "", "", null));
         }
 
         /// <summary>
@@ -196,9 +205,9 @@ namespace SimpleService.Protocol
             packetsIn.TryDequeue(out p);
             return p;
         }
-        #endregion
+#endregion
 
-        #region Constructors
+#region Constructors
         /// <summary>
         /// Creates a new client.
         /// </summary>
@@ -226,6 +235,6 @@ namespace SimpleService.Protocol
             : this() {
             Connect(address, port);
         }
-        #endregion
+#endregion
     }
 }

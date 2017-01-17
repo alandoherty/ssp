@@ -137,6 +137,10 @@ namespace SimpleService.Protocol
         /// <param name="reason">The reason.</param>
         /// <param name="send">If a disconnect packet should be sent.</param>
         public void Disconnect(string reason, bool send=true) {
+            // reason
+            if (disconnectReason == null)
+                disconnectReason = reason;
+
             // state
             state = State.Disconnecting;
 
@@ -150,10 +154,6 @@ namespace SimpleService.Protocol
                     Write(Packet.Create(this, Packet.Opcode.Internal, "__Disconnect", "", ms.ToArray(), sequence));
                 }
             }
-
-            // reason
-            if (disconnectReason == null)
-                disconnectReason = reason;
 
             // close
             Close();

@@ -96,12 +96,6 @@ namespace SimpleService
             lock (server.Connections) {
                 foreach (Connection conn in server.Connections) {
                     while (conn.Available) {
-                        // check if still connected
-                        if (!conn.Connected) {
-                            disconnected.Add(conn);
-                            break;
-                        }
-
                         // read packet
                         Packet p = conn.Read();
 
@@ -125,17 +119,21 @@ namespace SimpleService
                                 HandleMessage(transaction, conn);
                             else if (transaction.IsRequest)
                                 HandleRequest(transaction, conn);
+                        } else if (p.Type == Packet.Opcode.Disconnect) {
+                            disconnected.Add(conn);
+                            Utilities.DebugLog("disconnection from " + conn.Peer.RemoteAddress + " for " + conn.Peer.DisconnectReason);
                         } else {
                             conn.Disconnect("Invalid packet");
-                            return;
                         }
                     }
                 }
             }
 
             // remove all disconnected
-            foreach (Connection conn in disconnected)
+            foreach (Connection conn in disconnected) {
+                // remove
                 server.Connections.Remove(conn);
+            }
         }
 
         /// <summary>
@@ -168,10 +166,10 @@ namespace SimpleService
                 Handler handler = requestHandlers[transaction.Service];
 
                 // call
-                JObject response = ((ServiceRequestHandler)handler.Action)(transaction.Data);
+                object response = ((ServiceRequestHandler)handler.Action)(transaction.Data);
 
                 // reply
-                conn.Write(Transaction.CreateResponse(transaction, response.ToString(Formatting.None), conn.Peer));
+                conn.Write(Transaction.CreateResponse(transaction, JsonConvert.SerializeObject(response, Formatting.None), conn.Peer));
             } else {
                 if (!kickNotFound)
                     return;
@@ -179,18 +177,6 @@ namespace SimpleService
                 // disconnect
                 conn.Disconnect("Service not found");
             }
-        }
-        #endregion
-
-        #region Structures
-        /// <summary>
-        /// A handler entry.
-        /// </summary>
-        private struct Handler
-        {
-            public Visibility Visibility;
-            public string Service;
-            public Delegate Action;
         }
         #endregion
 

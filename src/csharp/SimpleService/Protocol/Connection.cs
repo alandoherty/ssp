@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -100,17 +101,26 @@ namespace SimpleService.Protocol
 
                 // process incoming
                 while (peer.Available) {
+#if !DEBUG
                     try {
+#endif
                         // read packet
                         Packet p = peer.Read();
+
+                        if (p == null) {
+                            peer.Disconnect("Failed to read packet", false);
+                            break;
+                        }
 
                         if (p.Type == Packet.Opcode.Internal)
                             ProcessInternal(p);
                         else
                             packetsIn.Enqueue(p);
+#if !DEBUG
                     } catch (Exception ex) {
-                        Utilities.DebugLog("failed to decode packet: " + ex.Message);
+                        Utilities.DebugLog(ex.ToString());
                     }
+#endif
                 }
 
                 // check if keep alive required
@@ -125,8 +135,12 @@ namespace SimpleService.Protocol
                 }
             }
 
-            // log
-            Utilities.DebugLog("disconnection from " + peer.RemoteAddress + " for " + peer.DisconnectReason);
+            // generic disconnect incase it's not picked
+            // up elsewhere
+            peer.Disconnect("Disconnected");
+
+            // write disconnect opcode
+            packetsIn.Enqueue(Packet.Create(peer, Packet.Opcode.Disconnect, "", "", null));
         }
 
         /// <summary>
@@ -147,7 +161,7 @@ namespace SimpleService.Protocol
                     peer.Disconnect(str);
                 }
             } else {
-                peer.Disconnect("Invalid internal service", true);
+                peer.Disconnect("Invalid internal service: " + p.Service, true);
             }
         }
 
@@ -167,9 +181,9 @@ namespace SimpleService.Protocol
             packetsIn.TryDequeue(out p);
             return p;
         }
-        #endregion
+#endregion
 
-        #region Constructors
+#region Constructors
         /// <summary>
         /// Creates a new connection from a socket.
         /// </summary>
@@ -180,6 +194,7 @@ namespace SimpleService.Protocol
             this.packetsIn = new ConcurrentQueue<Packet>();
             this.packetsOut = new ConcurrentQueue<Packet>();
             this.lastRecvAlive = Utilities.Timestamp();
+            this.server = server;
 
             // thread
             this.thread = new Thread(Loop);
@@ -187,6 +202,6 @@ namespace SimpleService.Protocol
             this.thread.IsBackground = true;
             this.thread.Start();
         }
-        #endregion
+#endregion
     }
 }

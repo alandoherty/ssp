@@ -14,7 +14,13 @@ namespace SimpleService
     /// </summary>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public delegate JObject ServiceRequestHandler(JObject obj);
+    public delegate object ServiceRequestHandler(JObject obj);
+
+    /// <summary>
+    /// Handles a response.
+    /// </summary>
+    /// <param name="obj">The object.</param>
+    public delegate void ServiceResponseHandler(JObject obj);
 
     public class Service<T>
     {

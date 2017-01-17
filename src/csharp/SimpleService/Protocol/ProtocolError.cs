@@ -4,6 +4,7 @@ namespace SimpleService.Protocol
 {
     public enum ProtocolError
     {
-        InvalidMagic
+        InvalidMagic,
+        InvalidOpcode
     }
 }

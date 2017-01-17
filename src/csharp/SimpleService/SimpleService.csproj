@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Consumer.cs" />
+    <Compile Include="Handler.cs" />
     <Compile Include="Host.cs" />
     <Compile Include="Protocol\Client.cs" />
     <Compile Include="Protocol\Connection.cs" />

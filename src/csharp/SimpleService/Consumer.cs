@@ -2,9 +2,8 @@
 using Newtonsoft.Json.Linq;
 using SimpleService.Protocol;
 using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 
 namespace SimpleService
 {
@@ -12,6 +11,10 @@ namespace SimpleService
     {
         #region Fields
         private Client client;
+        private Dictionary<string, Handler> messageHandlers;
+        private Dictionary<string, Handler> requestHandlers;
+        private Dictionary<ushort, ServiceResponseHandler> responseHandlers;
+        private bool connected = false;
         #endregion
 
         #region Properties
@@ -20,7 +23,7 @@ namespace SimpleService
         /// </summary>
         public bool Connected {
             get {
-                return client != null && client.Connected;
+                return connected;
             }
         }
         #endregion
@@ -33,6 +36,7 @@ namespace SimpleService
         /// <param name="port">The port.</param>
         public void Connect(string host, int port) {
             client.Connect(host, port);
+            connected = true;
         }
 
         /// <summary>
@@ -42,6 +46,7 @@ namespace SimpleService
         /// <param name="port">The port.</param>
         public void Connect(IPAddress address, int port) {
             client.Connect(address, port);
+            connected = true;
         }
 
         /// <summary>
@@ -60,7 +65,7 @@ namespace SimpleService
         }
 
         /// <summary>
-        /// Sends a request to the host.
+        /// Sends a message to the host.
         /// </summary>
         /// <param name="service">The service.</param>
         /// <param name="obj">The object.</param>
@@ -69,7 +74,7 @@ namespace SimpleService
         }
 
         /// <summary>
-        /// Sends a request to the host.
+        /// Sends a message to the host.
         /// </summary>
         /// <param name="service">The service.</param>
         /// <param name="obj">The object.</param>
@@ -78,7 +83,7 @@ namespace SimpleService
         }
 
         /// <summary>
-        /// Sends a request to the host.
+        /// Sends a message to the host.
         /// </summary>
         /// <param name="service">The service.</param>
         /// <param name="json">The JSON string..</param>
@@ -95,14 +100,15 @@ namespace SimpleService
         public void Message(string service, string json, string token) {
             // check parameters
             if (token.Length > Packet.TOKEN_SIZE)
-                throw new InvalidOperationException("The token cannot be longer than 32 characters");
-            else if (token.Length > Packet.SERVICE_SIZE)
-                throw new InvalidOperationException("The token cannot be longer than 32 characters");
+                throw new InvalidOperationException("The token cannot be longer than " + Packet.TOKEN_SIZE + " characters");
+            else if (service.Length > Packet.SERVICE_SIZE)
+                throw new InvalidOperationException("The service cannot be longer than " + Packet.SERVICE_SIZE + " characters");
 
             // write packet
             client.Write(Transaction.CreateMessage(service, json, token, client.Peer));
         }
 
+        /// <summary>
         /// Sends a message to the host, serializing the object to JSON and authenticating 
         /// with the provided token.
         /// </summary>
@@ -124,6 +130,83 @@ namespace SimpleService
         }
 
         /// <summary>
+        /// Sends a request to the host.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
+        /// <param name="handler">The handler.</param>
+        public void Request(string service, object obj, ServiceResponseHandler handler) {
+            Request(service, obj, handler, "");
+        }
+
+        /// <summary>
+        /// Sends a request to the host.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
+        /// <param name="handler">The handler.</param>
+        public void Request(string service, JObject obj, ServiceResponseHandler handler) {
+            Request(service, obj, handler, "");
+        }
+
+        /// <summary>
+        /// Sends a request to the host.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="json">The json.</param>
+        /// <param name="handler">The handler.</param>
+        public void Request(string service, string json, ServiceResponseHandler handler) {
+            Request(service, json, handler, "");
+        }
+
+        /// <summary>
+        /// Sends a request to the host, serializing the object to JSON and authenticating 
+        /// with the provided token.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
+        /// <param name="handler">The handler.</param>
+        /// <param name="token">The token.</param>
+        public void Request(string service, object obj, ServiceResponseHandler handler, string token) {
+            Request(service, JsonConvert.SerializeObject(obj, Formatting.None), handler, token);
+        }
+
+        /// <summary>
+        /// Sends a message to the host, authenticating with the provided token.
+        /// </summary>
+        /// <param name="service">The service.</param>
+        /// <param name="obj">The object.</param>
+        /// <param name="handler">The handler.</param>
+        /// <param name="token">The token.</param>
+        public void Request(string service, JObject obj, ServiceResponseHandler handler, string token) {
+            Request(service, obj.ToString(Formatting.None), handler, token);
+        }
+
+        /// <summary>
+        /// Sends a message to the host, authenticating with the provided token.
+        /// </summary
+        /// <param name="service">The service.</param>
+        /// <param name="json">The json.</param>
+        /// <param name="handler">The handler.</param>
+        /// <param name="token">The token.</param>
+        public void Request(string service, string json, ServiceResponseHandler handler, string token) {
+            // check parameters
+            if (token.Length > Packet.TOKEN_SIZE)
+                throw new InvalidOperationException("The token cannot be longer than " + Packet.TOKEN_SIZE + " characters");
+            else if (service.Length > Packet.SERVICE_SIZE)
+                throw new InvalidOperationException("The service cannot be longer than " + Packet.SERVICE_SIZE + " characters");
+
+            // build request
+            Packet req = Transaction.CreateRequest(service, json, token, client.Peer);
+
+            // setup response
+            responseHandlers[req.Sequence] = handler;
+
+            // write packet
+            client.Write(req);
+        }
+
+        /// <summary>
         /// Polls and processing messages.
         /// </summary>
         public void Poll() {
@@ -141,7 +224,6 @@ namespace SimpleService
                         transaction = new Transaction(p);
                     } catch (Exception) {
                         client.Disconnect("Malformed or invalid JSON");
-
                         continue;
                     }
 
@@ -150,9 +232,12 @@ namespace SimpleService
                         HandleMessage(transaction);
                     else if (transaction.IsRequest)
                         HandleRequest(transaction);
-                }  else {
-                    client.Disconnect("Invalid packet");
+                } else if (p.Type == Packet.Opcode.Disconnect) {
+                    connected = false;
+                    Utilities.DebugLog("disconnected from " + client.Peer.RemoteAddress + " for " + client.Peer.DisconnectReason);
                     return;
+                } else {
+                    client.Disconnect("Invalid packet");
                 }
             }
         }
@@ -162,19 +247,14 @@ namespace SimpleService
         /// </summary>
         /// <param name="transaction">The transaction.</param>
         private void HandleMessage(Transaction transaction) {
-            /*
             if (messageHandlers.ContainsKey(transaction.Service)) {
                 Handler handler = messageHandlers[transaction.Service];
 
                 // call
                 ((ServiceMessageHandler)handler.Action)(transaction.Data);
             } else {
-                if (!kickNotFound)
-                    return;
-
-                // disconnect
-                conn.Disconnect("Service not found");
-            }*/
+                client.Disconnect("Service not found");
+            }
         }
 
         /// <summary>
@@ -182,22 +262,26 @@ namespace SimpleService
         /// </summary>
         /// <param name="transaction">The transaction.</param>
         private void HandleRequest(Transaction transaction) {
-            /*
+            // call response handler if found
+            if (responseHandlers.ContainsKey(transaction.Sequence)) {
+                responseHandlers[transaction.Sequence](transaction.Data);
+                responseHandlers.Remove(transaction.Sequence);
+                return;
+            }
+
+            // check for a request handler
             if (requestHandlers.ContainsKey(transaction.Service)) {
                 Handler handler = requestHandlers[transaction.Service];
 
                 // call
-                JObject response = ((ServiceRequestHandler)handler.Action)(transaction.Data);
+                object response = ((ServiceRequestHandler)handler.Action)(transaction.Data);
 
                 // reply
-                conn.Write(Transaction.CreateResponse(transaction, response.ToString(Formatting.None), conn.Peer));
+                client.Write(Transaction.CreateResponse(transaction, JsonConvert.SerializeObject(response, Formatting.None), client.Peer));
             } else {
-                if (!kickNotFound)
-                    return;
-
                 // disconnect
-                conn.Disconnect("Service not found");
-            }*/
+                client.Disconnect("Service not found");
+            }
         }
         #endregion
 
@@ -207,6 +291,9 @@ namespace SimpleService
         /// </summary>
         public Consumer() {
             client = new Client();
+            messageHandlers = new Dictionary<string, Handler>();
+            requestHandlers = new Dictionary<string, Handler>();
+            responseHandlers = new Dictionary<ushort, ServiceResponseHandler>();
         }
 
         /// <summary>
@@ -224,7 +311,8 @@ namespace SimpleService
         /// </summary>
         /// <param name="address"></param>
         /// <param name="port"></param>
-        public Consumer(IPAddress address, int port) {
+        public Consumer(IPAddress address, int port) 
+            : this() {
             Connect(address, port);
         }
         #endregion
